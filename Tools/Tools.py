@@ -1,16 +1,18 @@
+'''
+Wrap up all the self-defined tools
+'''
 import warnings
 
 from pydantic import Field
 
-from .FileTools import list_files_in_directory
-
 warnings.filterwarnings("ignore")
-from langchain.agents import Tool
+# from langchain.agents import Tool
 from langchain.tools import StructuredTool
 from .FileQATool import ask_docment
 from .WriterTool import write
 from .EmailTool import send_email
 from .ExcelTool import get_first_n_rows, get_column_names
+from .FileTools import list_files_in_directory
 
 document_qa_tool = StructuredTool.from_function(
     func=ask_docment,

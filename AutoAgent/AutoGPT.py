@@ -1,8 +1,11 @@
 from typing import List, Optional, Tuple
 
+# import langchain memory module
 from langchain.memory.chat_memory import BaseChatMemory
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.memory import ConversationTokenBufferMemory, VectorStoreRetrieverMemory
+# import langchain chatmodels
+from langchain_core.language_models.chat_models import BaseChatModel
+
 from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
 from langchain.schema.output_parser import StrOutputParser
 from langchain.tools.base import BaseTool

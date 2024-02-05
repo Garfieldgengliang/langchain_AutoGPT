@@ -1,7 +1,14 @@
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
+
+# import prompt template modules
 from langchain.prompts import ChatPromptTemplate
 from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+# taking the output of LLM and parse into desired format
 from langchain_core.output_parsers import StrOutputParser
+# langchain runnablePassthrough, input sth and get the output through a chain
 from langchain_core.runnables import RunnablePassthrough
+# langchain llm
 from langchain_openai import ChatOpenAI
 
 
@@ -13,6 +20,7 @@ def write(query: str):
             HumanMessagePromptTemplate.from_template("{query}"),
         ]
     )
+    # print('current template is ', template)
 
     chain = {"query": RunnablePassthrough()} | template | ChatOpenAI() | StrOutputParser()
 

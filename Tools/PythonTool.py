@@ -1,12 +1,17 @@
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
+
 import re
 from langchain.tools import StructuredTool
 from langchain_core.output_parsers import BaseOutputParser
 
 from Utils.PrintUtils import color_print, CODE_COLOR
 from Utils.PromptTemplateBuilder import PromptTemplateBuilder
-# from Utils.PythonExecUtil import execute_python_code
+import ExcelTool
+# from .ExcelTool import get_first_n_rows, get_column_names
+# langchain llm
 from langchain_openai import ChatOpenAI
-from .ExcelTool import get_first_n_rows, get_column_names
+# run python code from string input
 from langchain_experimental.utilities import PythonREPL
 
 
@@ -45,7 +50,8 @@ class ExcelAnalyser:
         """分析一个结构化文件（例如excel文件）的内容。"""
 
         # columns = get_column_names(filename)
-        inspections = get_first_n_rows(filename, 3)
+        inspections = ExcelTool.get_first_n_rows(filename, 3)
+        print('current inspections are ', inspections)
 
         llm = ChatOpenAI(
             model="gpt-4-1106-preview",
@@ -55,6 +61,8 @@ class ExcelAnalyser:
             },
         )
 
+        # check the prompt
+        # print('current prompt is , ', '\n', self.prompt)
         chain = self.prompt | llm | PythonCodeParser()
 
         code = ""
@@ -63,21 +71,29 @@ class ExcelAnalyser:
             color_print("\n#!/usr/bin/env python", CODE_COLOR, end="\n")
 
         for c in chain.stream({
+            # the corresponding parameters 'query', 'filename' and 'inspections' are in self.prompt
+            # which are loaded from file excel_analyser.txt
             "query": query,
             "filename": filename,
             "inspections": inspections
         }):
+            print('current c is ', c)
+            print('current c type is ', type(c))
             if self.verbose:
                 color_print(c, CODE_COLOR, end="")
             code += c
 
         if code:
+            # use PythonREPL to run the code
             ans = PythonREPL().run(code)
             return ans
         else:
             return "没有找到可执行的Python代码"
 
     def as_tool(self):
+        '''
+        make ExcelAnalyser as a langchain tool
+        '''
         return StructuredTool.from_function(
             func=self.analyse,
             name="AnalyseExcel",
@@ -87,7 +103,7 @@ class ExcelAnalyser:
 
 if __name__ == "__main__":
     print(ExcelAnalyser(
-        prompts_path="../prompts"
+        prompts_path="../prompts/tools"
     ).analyse(
         query="8月销售额",
         filename="../data/2023年8月-9月销售记录.xlsx"

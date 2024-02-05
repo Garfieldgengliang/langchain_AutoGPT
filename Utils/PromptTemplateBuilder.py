@@ -3,6 +3,7 @@ from typing import List, Optional
 from langchain.tools.base import BaseTool
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.output_parsers import PydanticOutputParser
+
 from langchain.prompts import load_prompt
 from langchain.tools.render import render_text_description
 import os, json
@@ -48,6 +49,7 @@ class PromptTemplateBuilder:
         with open(prompt_file, "r", encoding="utf-8") as f:
             config = json.load(f)
         if "template_path" in config:
+            print('Going template path')
             # 如果是相对路径，则转换为绝对路径
             if not os.path.isabs(config["template_path"]):
                 config["template_path"] = os.path.join(self.prompt_path, config["template_path"])
@@ -69,11 +71,13 @@ class PromptTemplateBuilder:
             output_parser: Optional[BaseOutputParser] = None,
     ) -> BasePromptTemplate:
 
-        main_file = os.path.join(self.prompt_path, self.prompt_file)
+        main_file = os.path.join(self.prompt_path, self.prompt_file)  # join the prompt path and prompt file
         main_prompt_template = load_prompt(
             self._check_or_redirect(main_file)
         )
+        print('main prompt template is ', main_prompt_template)
         variables = main_prompt_template.input_variables
+        print('variables are ', variables)
         partial_variables = {}
         recursive_templates = []
 
@@ -95,6 +99,9 @@ class PromptTemplateBuilder:
             partial_variables["tools"] = tools_prompt
 
         if output_parser is not None and "format_instructions" in variables:
+            print('test what chinese friendly do: ', _chinese_friendly(
+                output_parser.get_format_instructions()
+            ) )
             partial_variables["format_instructions"] = _chinese_friendly(
                 output_parser.get_format_instructions()
             )

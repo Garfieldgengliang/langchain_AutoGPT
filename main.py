@@ -3,7 +3,8 @@ from dotenv import load_dotenv, find_dotenv
 _ = load_dotenv(find_dotenv())
 
 from AutoAgent.AutoGPT import AutoGPT
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI  # OpenAI Chat large language models API.
+from langchain_openai import OpenAIEmbeddings # OpenAI embedding models
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
 from Tools import *
@@ -41,8 +42,8 @@ def main():
 
     # 自定义工具集
     tools = [
-        document_qa_tool,
-        document_generation_tool,
+        document_qa_tool, # 根据一个Word或PDF文档的内容，回答一个问题, 考虑上下文信息
+        document_generation_tool, # 根据需求描述生成一篇正式文档
         email_tool,
         excel_inspection_tool,
         directory_inspection_tool,
@@ -51,13 +52,13 @@ def main():
             prompts_path="./prompts/tools",
             prompt_file="excel_analyser.json",
             verbose=True
-        ).as_tool()
+        ).as_tool() # 通过程序脚本分析一个结构化文件（例如excel文件）的内容。输人中必须包含文件的完整路径和具体分析方式和分析依据，阈值常量等
     ]
 
     # 定义智能体
     agent = AutoGPT(
         llm=llm,
-        prompts_path="./prompts/main",
+        prompts_path="./prompts/main", # file folder to store all the prompt templates
         tools=tools,
         work_dir="./data",
         main_prompt_file="main.json",
