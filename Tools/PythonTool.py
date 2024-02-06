@@ -7,8 +7,8 @@ from langchain_core.output_parsers import BaseOutputParser
 
 from Utils.PrintUtils import color_print, CODE_COLOR
 from Utils.PromptTemplateBuilder import PromptTemplateBuilder
-import ExcelTool
-# from .ExcelTool import get_first_n_rows, get_column_names
+# import ExcelTool
+from .ExcelTool import get_first_n_rows, get_column_names
 # langchain llm
 from langchain_openai import ChatOpenAI
 # run python code from string input
@@ -50,7 +50,8 @@ class ExcelAnalyser:
         """分析一个结构化文件（例如excel文件）的内容。"""
 
         # columns = get_column_names(filename)
-        inspections = ExcelTool.get_first_n_rows(filename, 3)
+        # inspections = ExcelTool.get_first_n_rows(filename, 3)
+        inspections = get_first_n_rows(filename, 3)
         print('current inspections are ', inspections)
 
         llm = ChatOpenAI(

@@ -3,13 +3,17 @@ from typing import List, Optional, Tuple
 # import langchain memory module
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory import ConversationTokenBufferMemory, VectorStoreRetrieverMemory
+from langchain.vectorstores.base import VectorStoreRetriever
+
 # import langchain chatmodels
 from langchain_core.language_models.chat_models import BaseChatModel
 
+# langchain output parser, parse the output into required format
 from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
 from langchain.schema.output_parser import StrOutputParser
+
 from langchain.tools.base import BaseTool
-from langchain.vectorstores.base import VectorStoreRetriever
+
 from pydantic import ValidationError
 
 from AutoAgent.Action import Action
@@ -71,14 +75,16 @@ class AutoGPT:
               long_term_memory,
               verbose=False
               ) -> Tuple[Action, str]:
-
+        '''
+        the output of one step is a tuple, which contains an action and a llm response
+        the action is parsed from the response
+        '''
         """执行一步思考"""
 
         response = ""
         for s in reason_chain.stream({
             "short_term_memory": _format_short_term_memory(short_term_memory),
-            "long_term_memory": _format_long_term_memory(task_description, long_term_memory)
-            if long_term_memory is not None else "",
+            "long_term_memory": _format_long_term_memory(task_description, long_term_memory) if long_term_memory is not None else "",
         }):
             if verbose:
                 color_print(s, THOUGHT_COLOR, end="")
@@ -136,9 +142,10 @@ class AutoGPT:
             tools=self.tools,
             output_parser=self.output_parser,
         ).partial(
-            work_dir=self.work_dir,
-            task_description=task_description,
+            work_dir=self.work_dir, # fill in work dir to the prompt template
+            task_description=task_description, # at this point fill in template with our task
         )
+        print('current prompt template after initializing is ', prompt_template)
 
         short_term_memory = ConversationTokenBufferMemory(
             llm=self.llm,
@@ -167,6 +174,9 @@ class AutoGPT:
             if verbose:
                 color_print(f">>>>Round: {thought_step_count}<<<<", ROUND_COLOR)
 
+            # run one step given chain, task_description(which might be used in long term memory
+            # short term memory(which will be updated every single step of thought)
+
             action, response = self._step(
                 chain,
                 task_description=task_description,
@@ -182,12 +192,14 @@ class AutoGPT:
                 reply = self._final_step(short_term_memory, task_description)
                 break
 
-            observation = self._exec_action(action)
+            observation = self._exec_action(action) #
 
             if verbose:
                 color_print(f"\n----\n结果:\n{observation}", OBSERVATION_COLOR)
 
             # 保存到短时记忆
+            # save the llm response(which contains information about which tool to use)
+            # the tool execution results to short term memory
             short_term_memory.save_context(
                 {"input": response},
                 {"output": "返回结果:\n" + observation}

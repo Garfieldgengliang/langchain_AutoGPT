@@ -1,19 +1,22 @@
 from langchain.prompts import PromptTemplate
 from typing import List, Optional
 from langchain.tools.base import BaseTool
+from langchain_core.tools import Tool
+# langchain output parser, parse the llm output into desired format
 from langchain.schema.output_parser import BaseOutputParser
 from langchain.output_parsers import PydanticOutputParser
-
+# langchain prompts Utilities, such as load str as prompt, prompt templates etc.
 from langchain.prompts import load_prompt
+from langchain_core.prompts import PipelinePromptTemplate, BasePromptTemplate
+
 from langchain.tools.render import render_text_description
 import os, json
 import tempfile
 
-from langchain_core.prompts import PipelinePromptTemplate, BasePromptTemplate
-from langchain_core.tools import Tool
-
 from AutoAgent.Action import Action
 
+from dotenv import load_dotenv, find_dotenv
+_ = load_dotenv(find_dotenv())
 
 def _chinese_friendly(string) -> str:
     lines = string.split('\n')
@@ -75,9 +78,9 @@ class PromptTemplateBuilder:
         main_prompt_template = load_prompt(
             self._check_or_redirect(main_file)
         )
-        print('main prompt template is ', main_prompt_template)
+        # print('main prompt template is after check_or_redirect is ', main_prompt_template)
         variables = main_prompt_template.input_variables
-        print('variables are ', variables)
+        # print('variables are ', variables)
         partial_variables = {}
         recursive_templates = []
 
@@ -85,6 +88,7 @@ class PromptTemplateBuilder:
         for var in variables:
             # 是否存在嵌套模板
             if os.path.exists(os.path.join(self.prompt_path, f"{var}.json")):
+                print('Subtemplate exist for var ', var)
                 sub_template = PromptTemplateBuilder(
                     self.prompt_path, f"{var}.json"
                 ).build(tools=tools, output_parser=output_parser)
@@ -96,6 +100,7 @@ class PromptTemplateBuilder:
 
         if tools is not None and "tools" in variables:
             tools_prompt = render_text_description(tools)  # _get_tools_prompt(tools)
+            # print('tools prompt after langchain render is ', tools_prompt)
             partial_variables["tools"] = tools_prompt
 
         if output_parser is not None and "format_instructions" in variables:
@@ -114,6 +119,7 @@ class PromptTemplateBuilder:
             )
 
         # 将有值的变量填充到模板中
+        # print('current partial variables are ', partial_variables)
         main_prompt_template = main_prompt_template.partial(**partial_variables)
 
         return main_prompt_template
@@ -125,6 +131,7 @@ if __name__ == "__main__":
     prompt_template = builder.build(tools=[
         Tool(name="FINISH", func=lambda: None, description="任务完成")
     ], output_parser=output_parser)
+    # print('test prompt template is ', prompt_template)
     print(prompt_template.format(
         task_description="解决问题",
         work_dir=".",
